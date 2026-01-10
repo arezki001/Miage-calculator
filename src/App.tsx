@@ -33,8 +33,8 @@ const MIAGE_MODULES = {
     { id: '23', nameAr: 'مقدمة في الإدارة', nameEn: 'Introduction to Management', coeff: 2 },
     { id: '24', nameAr: 'مالية عامة', nameEn: 'Public Finance', coeff: 2 },
     { id: '25', nameAr: 'تحليل بيانات 1', nameEn: 'Data Analysis 1', coeff: 2 },
-    { id: '26', nameAr: 'قانون تجاري', nameEn: 'Commercial Law', coeff: 2 },
-    { id: '27', nameAr: 'لغة إنجليزية 3', nameEn: 'English 3', coeff: 2 }
+    { id: '26', nameAr: 'قانون تجاري', nameEn: 'Commercial Law', coeff: 1 },
+    { id: '27', nameAr: 'لغة إنجليزية 3', nameEn: 'English 3', coeff: 1 }
   ],
   L2_S4: [
     { id: '28', nameAr: 'شبكات وتقنيات الويب', nameEn: 'Networks and Web Technologies', coeff: 2 },
