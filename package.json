@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": " vite build",
+    "build": "vite build",
     "preview": "vite preview",
     "deploy": "npm run build && echo 'Build complete! Deploy to Vercel/Netlify'"
   },
