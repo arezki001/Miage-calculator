@@ -11,8 +11,8 @@ const MIAGE_MODULES = {
     { id: '5', nameAr: 'مقدمة في العلوم الاقتصادية', nameEn: 'Introduction to Economic Sciences', coeff: 2 },
     { id: '6', nameAr: 'مقدمة في العلوم الإنسانية والاجتماعية 1', nameEn: 'Introduction to Human and Social Sciences 1', coeff: 2 },
     { id: '7', nameAr: 'عمل جامعي 1', nameEn: 'University Work 1', coeff: 2 },
-    { id: '8', nameAr: 'أخلاقيات المهنة', nameEn: 'Professional Ethics', coeff: 2 },
-    { id: '9', nameAr: 'لغة إنجليزية 1', nameEn: 'English 1', coeff: 2 }
+    { id: '8', nameAr: 'أخلاقيات المهنة', nameEn: 'Professional Ethics', coeff: 1 },
+    { id: '9', nameAr: 'لغة إنجليزية 1', nameEn: 'English 1', coeff: 1 }
   ],
   L1_S2: [
     { id: '10', nameAr: 'مقدمة في الذكاء الاصطناعي', nameEn: 'Introduction to Artificial Intelligence', coeff: 3 },
@@ -22,8 +22,8 @@ const MIAGE_MODULES = {
     { id: '14', nameAr: 'عمل جامعي 2', nameEn: 'University Work 2', coeff: 2 },
     { id: '15', nameAr: 'جبر خطي', nameEn: 'Linear Algebra', coeff: 3 },
     { id: '16', nameAr: 'ريادة الأعمال وإدارة المؤسسة', nameEn: 'Entrepreneurship and Business Management', coeff: 2 },
-    { id: '17', nameAr: 'مقدمة في القانون', nameEn: 'Introduction to Law', coeff: 2 },
-    { id: '18', nameAr: 'لغة إنجليزية 2', nameEn: 'English 2', coeff: 2 }
+    { id: '17', nameAr: 'مقدمة في القانون', nameEn: 'Introduction to Law', coeff: 1 },
+    { id: '18', nameAr: 'لغة إنجليزية 2', nameEn: 'English 2', coeff: 1}
   ],
   L2_S3: [
     { id: '19', nameAr: 'نظم المعلومات', nameEn: 'Information Systems', coeff: 2 },
