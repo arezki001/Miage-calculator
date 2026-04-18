@@ -44,7 +44,7 @@ const MIAGE_MODULES = {
     { id: '32', nameAr: 'تحليل بيانات 2', nameEn: 'Data Analysis 2', coeff: 2 },
     { id: '33', nameAr: 'رياضيات مالية', nameEn: 'Financial Mathematics', coeff: 2 },
     { id: '34', nameAr: 'مقدمة في التسويق', nameEn: 'Introduction to Marketing', coeff: 2 },
-    { id: '35', nameAr: 'لغة إنجليزية 4', nameEn: 'English 4', coeff: 2 },
+    { id: '35', nameAr: 'لغة إنجليزية 4', nameEn: 'English 4', coeff: 1 },
     { id: '36', nameAr: 'نظم المعلومات للمؤسسات', nameEn: 'Enterprise Information Systems', coeff: 2 }
   ]
 };
