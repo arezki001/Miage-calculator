@@ -40,7 +40,7 @@ const MIAGE_MODULES = {
     { id: '28', nameAr: 'شبكات وتقنيات الويب', nameEn: 'Networks and Web Technologies', coeff: 2 },
     { id: '29', nameAr: 'قواعد البيانات', nameEn: 'Databases', coeff: 3 },
     { id: '30', nameAr: 'اقتصاد كلي', nameEn: 'Macroeconomics', coeff: 3 },
-    { id: '31', nameAr: 'مقدمة إلى محاسبة التكاليف', nameEn: 'Introduction to Cost Accounting', coeff: 2 },
+    { id: '31', nameAr: 'مقدمة إلى محاسبة التكاليف', nameEn: 'Introduction to management Accounting', coeff: 2 },
     { id: '32', nameAr: 'تحليل بيانات 2', nameEn: 'Data Analysis 2', coeff: 2 },
     { id: '33', nameAr: 'رياضيات مالية', nameEn: 'Financial Mathematics', coeff: 2 },
     { id: '34', nameAr: 'مقدمة في التسويق', nameEn: 'Introduction to Marketing', coeff: 1 },
