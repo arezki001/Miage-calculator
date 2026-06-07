@@ -1,218 +1,199 @@
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import {
-  calcSemesterAverage,
-  calcCreditsEarned,
-  getTotalCredits,
-  type Grades,
-  type Lang,
-} from '../data/courses'
+import type { Lang } from '../data/courses'
 
 interface YearSummaryProps {
   year: 'l1' | 'l2' | 'l3'
-  grades: Grades
+  semInputs: Record<string, number | null>
+  onSemInputChange: (key: string, value: number | null) => void
   lang: Lang
   isDark: boolean
   onTabChange: (tab: string) => void
 }
 
-const YEAR_SEMS: Record<'l1' | 'l2' | 'l3', [1 | 2 | 3 | 4 | 5 | 6, 1 | 2 | 3 | 4 | 5 | 6]> = {
-  l1: [1, 2],
-  l2: [3, 4],
-  l3: [5, 6],
+const YEAR_SEMS: Record<'l1' | 'l2' | 'l3', [string, string]> = {
+  l1: ['s1', 's2'],
+  l2: ['s3', 's4'],
+  l3: ['s5', 's6'],
 }
 
-function SemCard({
-  semNum, grades, isDark, onClick,
-}: {
-  semNum: 1 | 2 | 3 | 4 | 5 | 6
-  grades: Grades
-  isDark: boolean
-  onClick: () => void
-}) {
-  const { t } = useTranslation()
-  const avg = calcSemesterAverage(semNum, grades)
-  const credits = calcCreditsEarned(semNum, grades)
-  const total = getTotalCredits(semNum)
-  const passed = avg !== null && avg >= 10
+function clamp(v: number) {
+  return Math.min(20, Math.max(0, v))
+}
 
-  const glass = isDark ? 'glass-dark' : 'glass-light'
+function parseInput(s: string): number | null {
+  if (!s || s === '-' || s === '.') return null
+  const n = parseFloat(s)
+  return isNaN(n) ? null : clamp(n)
+}
+
+/* ── SemAvgInput ──────────────────────────────────────────────── */
+
+interface SemAvgInputProps {
+  semKey: string
+  value: number | null
+  onChange: (key: string, v: number | null) => void
+  label: string
+  onGoToSem: () => void
+  isDark: boolean
+}
+
+function SemAvgInput({ semKey, value, onChange, label, onGoToSem, isDark }: SemAvgInputProps) {
+  const { t } = useTranslation()
+  const passed = value !== null && value >= 10
+  const failed = value !== null && value < 10
+
+  const borderColor = passed
+    ? 'border-green-500/50 focus:border-green-400'
+    : failed
+    ? 'border-red-500/50 focus:border-red-400'
+    : isDark
+    ? 'border-white/15 focus:border-yellow-500/60'
+    : 'border-black/12 focus:border-yellow-600/60'
 
   return (
-    <motion.button
-      whileHover={{ y: -4, boxShadow: '0 12px 32px rgba(245,158,11,0.2)' }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      className={`${glass} rounded-2xl p-6 text-left w-full transition-all cursor-pointer`}
-    >
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <span className={`text-xs uppercase tracking-wider font-semibold ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-            {t('semester')} {semNum}
-          </span>
-          <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-            {credits}/{total} {t('credits')}
-          </p>
-        </div>
-        {avg !== null && (
-          <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${
-            passed
-              ? 'bg-green-500/12 text-green-400 border-green-500/25'
-              : 'bg-red-500/12 text-red-400 border-red-500/25'
-          }`}>
-            {passed ? '✅' : '❌'} {passed ? t('validated') : t('notValidated')}
-          </span>
-        )}
-      </div>
-
-      <div className="flex items-end gap-2">
-        <span className={`text-5xl font-bold ${
-          avg === null
-            ? isDark ? 'text-slate-700' : 'text-slate-300'
-            : passed ? 'text-green-400' : 'text-red-400'
-        }`}>
-          {avg !== null ? avg.toFixed(2) : '—'}
+    <div className={`flex-1 rounded-2xl p-5 border ${isDark ? 'bg-white/[0.04] border-white/8' : 'bg-black/[0.03] border-black/8'}`}>
+      <div className="flex items-center justify-between mb-3">
+        <span className={`text-sm font-bold uppercase tracking-wide ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+          {label}
         </span>
-        {avg !== null && (
-          <span className={`text-lg mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>/20</span>
-        )}
+        <button
+          type="button"
+          onClick={onGoToSem}
+          title={`${t('semester')} ${label}`}
+          className={`text-xs px-2 py-1 rounded-lg transition-colors ${
+            isDark
+              ? 'text-yellow-400 hover:bg-yellow-500/10'
+              : 'text-yellow-600 hover:bg-yellow-500/10'
+          }`}
+        >
+          → {t('semester')}
+        </button>
       </div>
 
-      <div className="mt-3 h-1.5 rounded-full bg-white/8 overflow-hidden">
+      <input
+        type="number"
+        min={0}
+        max={20}
+        step={0.01}
+        value={value ?? ''}
+        onChange={e => onChange(semKey, parseInput(e.target.value))}
+        placeholder={t('enterSemAvg')}
+        title={label}
+        className={`w-full text-center text-2xl font-bold rounded-xl border px-3 py-3 outline-none transition-colors ${borderColor} ${
+          isDark ? 'bg-white/5 text-slate-100' : 'bg-black/3 text-slate-900'
+        }`}
+      />
+
+      {value !== null && (
         <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: avg !== null ? `${(avg / 20) * 100}%` : '0%' }}
-          transition={{ duration: 0.8, ease: 'easeOut' }}
-          className={`h-full rounded-full ${passed ? 'bg-green-400' : avg !== null ? 'bg-red-400' : 'bg-slate-600'}`}
-        />
-      </div>
-
-      <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-        ↗ {t('semester')} {semNum}
-      </p>
-    </motion.button>
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className={`mt-2 text-center text-xs font-bold py-1 rounded-lg ${
+            passed
+              ? isDark ? 'text-green-400 bg-green-500/10' : 'text-green-600 bg-green-50'
+              : isDark ? 'text-red-400 bg-red-500/10' : 'text-red-600 bg-red-50'
+          }`}
+        >
+          {passed ? `✅ ${t('validated')}` : `❌ ${t('notValidated')}`}
+        </motion.div>
+      )}
+    </div>
   )
 }
 
-export default function YearSummary({ year, grades, isDark, onTabChange }: YearSummaryProps) {
-  const { t } = useTranslation()
-  const [s1, s2] = YEAR_SEMS[year]
+/* ── YearSummary ──────────────────────────────────────────────── */
 
-  const avg1 = calcSemesterAverage(s1, grades)
-  const avg2 = calcSemesterAverage(s2, grades)
+export default function YearSummary({
+  year, semInputs, onSemInputChange, isDark, onTabChange,
+}: YearSummaryProps) {
+  const { t } = useTranslation()
+  const [semA, semB] = YEAR_SEMS[year]
+
+  const valA = semInputs[semA] ?? null
+  const valB = semInputs[semB] ?? null
 
   const yearAvg =
-    avg1 !== null && avg2 !== null
-      ? Math.round(((avg1 + avg2) / 2) * 100) / 100
-      : avg1 !== null
-      ? avg1
-      : avg2 !== null
-      ? avg2
+    valA !== null && valB !== null
+      ? Math.round(((valA + valB) / 2) * 100) / 100
       : null
 
-  const credits1 = calcCreditsEarned(s1, grades)
-  const credits2 = calcCreditsEarned(s2, grades)
-  const totalEarned = credits1 + credits2
-  const totalAll = getTotalCredits(s1) + getTotalCredits(s2)
-
-  const passed = yearAvg !== null && yearAvg >= 10
-  const avgKey = `${year}Avg` as 'l1Avg' | 'l2Avg' | 'l3Avg'
+  const yearPassed = yearAvg !== null && yearAvg >= 10
   const glass = isDark ? 'glass-dark' : 'glass-light'
+
+  const semLabel = (key: string) => t(key as any) || key.toUpperCase()
+  const yearLabel = t(year as any) || year.toUpperCase()
+
+  const validatedKey = `yearValidated`
+  const notValidatedKey = `yearNotValidated`
 
   return (
     <div className="space-y-6 pt-4">
-      {/* Title */}
+      {/* Header */}
       <div>
         <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-          {t(year)} — {t('yearAvg')}
+          {yearLabel}
         </h2>
-        <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-          {totalEarned}/{totalAll} {t('credits')}
+        <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+          {t('manualNote')}
         </p>
       </div>
 
-      {/* Semester cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-          <SemCard semNum={s1} grades={grades} isDark={isDark} onClick={() => onTabChange(`s${s1}`)} />
-        </motion.div>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
-          <SemCard semNum={s2} grades={grades} isDark={isDark} onClick={() => onTabChange(`s${s2}`)} />
-        </motion.div>
+      {/* Two semester inputs */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <SemAvgInput
+          semKey={semA}
+          value={valA}
+          onChange={onSemInputChange}
+          label={semLabel(semA)}
+          onGoToSem={() => onTabChange(semA)}
+          isDark={isDark}
+        />
+        <SemAvgInput
+          semKey={semB}
+          value={valB}
+          onChange={onSemInputChange}
+          label={semLabel(semB)}
+          onGoToSem={() => onTabChange(semB)}
+          isDark={isDark}
+        />
       </div>
 
-      {/* Year summary card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className={`${glass} rounded-2xl p-6`}
-      >
-        <div className="flex flex-wrap items-center justify-between gap-6">
-          <div>
-            <p className={`text-xs uppercase tracking-wider font-semibold mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-              {t(avgKey)}
-            </p>
-            <div className="flex items-end gap-2">
-              <span className={`text-6xl font-bold ${
-                yearAvg === null
-                  ? isDark ? 'text-slate-700' : 'text-slate-300'
-                  : passed ? 'text-green-400' : 'text-red-400'
-              }`}>
-                {yearAvg !== null ? yearAvg.toFixed(2) : '—'}
-              </span>
-              {yearAvg !== null && (
-                <span className={`text-2xl mb-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>/20</span>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-col items-end gap-3">
-            <div className="text-right">
-              <p className={`text-xs uppercase tracking-wide mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                {t('creditsEarned')}
-              </p>
-              <p className={`text-3xl font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                {totalEarned}
-                <span className={`text-lg ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                  /{totalAll}
-                </span>
-              </p>
-            </div>
-
-            {yearAvg !== null && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 18 }}
-                className={`px-5 py-2.5 rounded-xl font-bold text-sm ${
-                  passed
-                    ? 'bg-green-500/15 text-green-400 border border-green-500/30'
-                    : 'bg-red-500/15 text-red-400 border border-red-500/30'
-                }`}
-              >
-                {passed ? `✅ ${t('yearValidated')}` : `❌ ${t('yearNotValidated')}`}
-              </motion.div>
-            )}
-          </div>
+      {/* Year average result */}
+      <div className={`rounded-2xl ${glass} p-6 flex flex-wrap items-center justify-between gap-4`}>
+        <div>
+          <p className={`text-xs uppercase tracking-wide mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+            {t('yearAvg')} = ({semLabel(semA)} + {semLabel(semB)}) ÷ 2
+          </p>
+          <motion.p
+            key={String(yearAvg)}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className={`text-4xl font-bold ${
+              yearAvg === null
+                ? isDark ? 'text-slate-600' : 'text-slate-400'
+                : yearPassed ? 'text-green-400' : 'text-red-400'
+            }`}
+          >
+            {yearAvg !== null ? yearAvg.toFixed(2) : '—'}
+          </motion.p>
         </div>
 
-        {/* Progress bar */}
         {yearAvg !== null && (
-          <div className="mt-5 h-2 rounded-full bg-white/8 overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${(yearAvg / 20) * 100}%` }}
-              transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }}
-              className={`h-full rounded-full ${
-                passed
-                  ? 'bg-gradient-to-r from-green-500 to-green-400'
-                  : 'bg-gradient-to-r from-red-500 to-red-400'
-              }`}
-            />
-          </div>
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 18 }}
+            className={`px-5 py-3 rounded-xl font-bold text-sm ${
+              yearPassed
+                ? 'bg-green-500/15 text-green-400 border border-green-500/30 glow-green'
+                : 'bg-red-500/15 text-red-400 border border-red-500/30 glow-red'
+            }`}
+          >
+            {yearPassed ? `✅ ${t(validatedKey as any)}` : `❌ ${t(notValidatedKey as any)}`}
+          </motion.div>
         )}
-      </motion.div>
+      </div>
     </div>
   )
 }

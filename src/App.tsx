@@ -29,15 +29,26 @@ export default function App() {
     }
   })
 
+  const [semInputs, setSemInputs] = useState<Record<string, number | null>>(() => {
+    try {
+      const raw = localStorage.getItem('miage-sem-inputs-v1')
+      return raw ? (JSON.parse(raw) as Record<string, number | null>) : {}
+    } catch { return {} }
+  })
+
   const [activeTab, setActiveTab] = useState('s1')
   const [isDark, setIsDark] = useState(true)
   const [lang, setLang] = useState<Lang>('fr')
-  const { i18n: i18nHook } = useTranslation()
+  useTranslation() // keep i18next context active
 
   // ── Persistence ────────────────────────────────────────────────
   useEffect(() => {
     localStorage.setItem('miage-grades-v3', JSON.stringify(grades))
   }, [grades])
+
+  useEffect(() => {
+    localStorage.setItem('miage-sem-inputs-v1', JSON.stringify(semInputs))
+  }, [semInputs])
 
   // ── i18next sync ──────────────────────────────────────────────
   useEffect(() => {
@@ -82,7 +93,14 @@ export default function App() {
     })
   }, [])
 
-  const resetAll = useCallback(() => setGrades({}), [])
+  const updateSemInput = useCallback((key: string, value: number | null) => {
+    setSemInputs(prev => ({ ...prev, [key]: value }))
+  }, [])
+
+  const resetAll = useCallback(() => {
+    setGrades({})
+    setSemInputs({})
+  }, [])
 
   // ── Theme ──────────────────────────────────────────────────────
   const bgClass = isDark
@@ -154,7 +172,8 @@ export default function App() {
               >
                 <YearSummary
                   year={activeTab as 'l1' | 'l2' | 'l3'}
-                  grades={grades}
+                  semInputs={semInputs}
+                  onSemInputChange={updateSemInput}
                   lang={lang}
                   isDark={isDark}
                   onTabChange={setActiveTab}
@@ -172,7 +191,8 @@ export default function App() {
                 transition={{ duration: 0.22 }}
               >
                 <LicenceSummary
-                  grades={grades}
+                  semInputs={semInputs}
+                  onSemInputChange={updateSemInput}
                   lang={lang}
                   isDark={isDark}
                   onTabChange={setActiveTab}

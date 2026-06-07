@@ -135,22 +135,6 @@ export function calcSemesterAverage(semNum: 1 | 2 | 3 | 4 | 5 | 6, grades: Grade
   return Math.round((totalScore / totalWeight) * 100) / 100;
 }
 
-export function calcCreditsEarned(semNum: 1 | 2 | 3 | 4 | 5 | 6, grades: Grades): number {
-  return courses
-    .filter(c => c.semester === semNum)
-    .filter(c => {
-      const entry = grades[c.id];
-      if (!entry) return false;
-      const g = calcCourseGrade(c, entry);
-      return g !== null && g >= 10;
-    })
-    .reduce((sum, c) => sum + c.credits, 0);
-}
-
-export function getTotalCredits(semNum: 1 | 2 | 3 | 4 | 5 | 6): number {
-  return courses.filter(c => c.semester === semNum).reduce((s, c) => s + c.credits, 0);
-}
-
 export function getCourseName(course: Course, lang: Lang): string {
   if (lang === 'ar') return course.nameAr;
   if (lang === 'en') return course.nameEn;
