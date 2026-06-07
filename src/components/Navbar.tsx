@@ -7,8 +7,6 @@ import type { Lang } from '../data/courses'
 interface NavbarProps {
   activeTab: string
   onTabChange: (tab: string) => void
-  lang: Lang
-  onLangChange: (lang: Lang) => void
   isDark: boolean
   onToggleDark: () => void
   onResetAll: () => void
@@ -18,17 +16,6 @@ const SEM_TABS = ['s1', 's2', 's3', 's4', 's5', 's6'] as const
 const YEAR_TABS = ['l1', 'l2', 'l3', 'licence'] as const
 const ALL_TABS = [...SEM_TABS, ...YEAR_TABS]
 
-const LANG_FLAGS: { code: Lang; flag: string; label: string }[] = [
-  { code: 'fr', flag: '🇫🇷', label: 'FR' },
-  { code: 'en', flag: '🇬🇧', label: 'EN' },
-  { code: 'ar', flag: '🇸🇦', label: 'AR' },
-]
-
-const GROUP_LABELS: Record<Lang, { sem: string; year: string }> = {
-  fr: { sem: 'Semestres', year: 'Années' },
-  en: { sem: 'Semesters', year: 'Years' },
-  ar: { sem: 'الفصول', year: 'السنوات' },
-}
 
 /* ── Help content ───────────────────────────────────────────────── */
 
@@ -221,7 +208,7 @@ function HelpModal({ lang, isDark, onClose }: { lang: Lang; isDark: boolean; onC
 /* ── Navbar ─────────────────────────────────────────────────────── */
 
 export default function Navbar({
-  activeTab, onTabChange, lang, onLangChange, isDark, onToggleDark, onResetAll,
+  activeTab, onTabChange, isDark, onToggleDark, onResetAll,
 }: NavbarProps) {
   const { t } = useTranslation()
   const [confirmReset, setConfirmReset] = useState(false)
@@ -270,12 +257,12 @@ export default function Navbar({
                   : 'bg-white/80 border-yellow-500/50 text-yellow-600'
               }`}
             >
-              <optgroup label={GROUP_LABELS[lang].sem}>
+              <optgroup label="Semesters">
                 {SEM_TABS.map(tab => (
                   <option key={tab} value={tab}>{tabLabel(tab)}</option>
                 ))}
               </optgroup>
-              <optgroup label={GROUP_LABELS[lang].year}>
+              <optgroup label="Years">
                 {YEAR_TABS.map(tab => (
                   <option key={tab} value={tab}>{tabLabel(tab)}</option>
                 ))}
@@ -326,26 +313,6 @@ export default function Navbar({
 
           {/* Right controls */}
           <div className="flex items-center gap-1 flex-shrink-0">
-
-            {/* Language switcher */}
-            <div className={`flex items-center rounded-lg overflow-hidden border ${isDark ? 'border-white/12' : 'border-black/10'}`}>
-              {LANG_FLAGS.map(({ code, flag, label }) => (
-                <button
-                  key={code}
-                  type="button"
-                  onClick={() => onLangChange(code)}
-                  title={label}
-                  className={`px-2 py-1.5 text-xs font-semibold transition-all min-h-[36px] min-w-[32px] ${
-                    lang === code
-                      ? isDark ? 'bg-yellow-500/20 text-yellow-400' : 'bg-yellow-500/25 text-yellow-600'
-                      : isDark ? 'text-slate-400 hover:bg-white/8' : 'text-slate-500 hover:bg-black/5'
-                  }`}
-                >
-                  <span>{flag}</span>
-                  <span className="hidden sm:inline ml-0.5">{label}</span>
-                </button>
-              ))}
-            </div>
 
             {/* Help button */}
             <button
@@ -441,7 +408,7 @@ export default function Navbar({
 
       <AnimatePresence>
         {showHelp && (
-          <HelpModal lang={lang} isDark={isDark} onClose={() => setShowHelp(false)} />
+          <HelpModal lang="en" isDark={isDark} onClose={() => setShowHelp(false)} />
         )}
       </AnimatePresence>
     </>

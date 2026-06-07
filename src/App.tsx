@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import i18n from 'i18next'
 import Background3D from './components/Background3D'
 import FloatingSymbols from './components/FloatingSymbols'
 import Navbar from './components/Navbar'
@@ -38,10 +37,7 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState('s1')
   const [isDark, setIsDark] = useState(true)
-  const [lang, setLang] = useState<Lang>(() => {
-    const s = localStorage.getItem('miage-lang')
-    return s === 'fr' || s === 'en' || s === 'ar' ? (s as Lang) : 'fr'
-  })
+  const lang: Lang = 'en'
   const { t } = useTranslation()
 
   // ── Persistence ────────────────────────────────────────────────
@@ -52,13 +48,6 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('miage-sem-inputs-v1', JSON.stringify(semInputs))
   }, [semInputs])
-
-  // ── i18next sync ──────────────────────────────────────────────
-  const handleLangChange = useCallback((newLang: Lang) => {
-    i18n.changeLanguage(newLang)
-    localStorage.setItem('miage-lang', newLang)
-    setLang(newLang)
-  }, [])
 
   // ── Grade updaters ─────────────────────────────────────────────
   const updateGrade = useCallback(
@@ -121,7 +110,7 @@ export default function App() {
   return (
     <div
       className={`min-h-screen ${bgClass} ${textClass}`}
-      dir={lang === 'ar' ? 'rtl' : 'ltr'}
+      dir="ltr"
     >
       {/* 3D Background */}
       <div className="fixed inset-0 z-0 pointer-events-none">
@@ -136,8 +125,6 @@ export default function App() {
         <Navbar
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          lang={lang}
-          onLangChange={handleLangChange}
           isDark={isDark}
           onToggleDark={() => setIsDark(d => !d)}
           onResetAll={resetAll}
