@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { RotateCcw, Calculator, Pencil, X } from 'lucide-react'
@@ -21,7 +21,7 @@ function clampGrade(v: number) {
 }
 
 function parseGrade(raw: string): number | null {
-  if (raw === '' || raw === '-' || raw === '.') return null
+  if (!raw || raw === '-' || raw === '.') return null
   const v = parseFloat(raw)
   return isNaN(v) ? null : clampGrade(v)
 }
@@ -50,40 +50,51 @@ function calcSimulator(
 
 /* ── GradeInput ────────────────────────────────────────────────── */
 
+const TYPE_COLORS = {
+  exam: { border: '#3B82F6', text: '#60A5FA' },
+  td:   { border: '#10B981', text: '#34D399' },
+  tp:   { border: '#8B5CF6', text: '#A78BFA' },
+} as const
+
 interface GradeInputProps {
   value: number | null
   onChange: (v: number | null) => void
   label: string
+  colorType: 'exam' | 'td' | 'tp'
   isDark: boolean
 }
 
-function GradeInput({ value, onChange, label, isDark }: GradeInputProps) {
+function GradeInput({ value, onChange, label, colorType, isDark }: GradeInputProps) {
   const [raw, setRaw] = useState(value !== null ? String(value) : '')
-  const isValid = value !== null && value >= 10
-  const isInvalid = value !== null && value < 10
+  const [focused, setFocused] = useState(false)
+
+  useEffect(() => {
+    if (!focused) {
+      setRaw(value !== null ? String(value) : '')
+    }
+  }, [value, focused])
+
+  const hasValue = value !== null
+  const isValid = hasValue && value! >= 10
+  const isInvalid = hasValue && value! < 10
+
+  const tc = TYPE_COLORS[colorType]
+  const borderColor = isValid ? '#22C55E' : isInvalid ? '#EF4444' : tc.border
+  const labelColor = hasValue ? (isValid ? '#4ADE80' : '#F87171') : tc.text
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const txt = e.target.value
-    setRaw(txt)
-    onChange(parseGrade(txt))
+    setRaw(e.target.value)
+    onChange(parseGrade(e.target.value))
   }
 
   function handleBlur() {
-    if (value !== null) setRaw(String(value))
-    else setRaw('')
+    setFocused(false)
+    setRaw(value !== null ? String(value) : '')
   }
 
-  const borderColor = isValid
-    ? 'border-green-500/40'
-    : isInvalid
-    ? 'border-red-500/40'
-    : isDark
-    ? 'border-white/12'
-    : 'border-black/12'
-
   return (
-    <div className="flex flex-col items-center gap-0.5">
-      <span className={`text-[10px] font-semibold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+    <div className="flex flex-col items-center gap-1 flex-1 min-w-[62px]">
+      <span className="text-xs font-bold uppercase tracking-wide leading-none" style={{ color: labelColor }}>
         {label}
       </span>
       <input
@@ -93,15 +104,26 @@ function GradeInput({ value, onChange, label, isDark }: GradeInputProps) {
         step={0.25}
         value={raw}
         onChange={handleChange}
+        onFocus={() => setFocused(true)}
         onBlur={handleBlur}
-        placeholder="—"
-        className={`grade-input border ${borderColor} ${isDark ? 'text-slate-100' : 'text-slate-800'} placeholder-slate-500`}
+        placeholder="0-20"
+        className={`w-full text-center font-bold rounded-xl outline-none transition-all duration-200 ${
+          isDark ? 'bg-slate-800/60 text-slate-100' : 'bg-white/90 text-slate-900'
+        }`}
+        style={{
+          borderWidth: '2px',
+          borderStyle: 'solid',
+          borderColor,
+          fontSize: '1.125rem',
+          minHeight: '52px',
+          boxShadow: focused ? `0 0 0 3px ${borderColor}30` : 'none',
+        }}
       />
     </div>
   )
 }
 
-/* ── PercModal (fixed overlay) ─────────────────────────────────── */
+/* ── PercModal ─────────────────────────────────────────────────── */
 
 interface PercModalProps {
   course: Course
@@ -120,40 +142,38 @@ function PercModal({ course, entry, onApply, onClose, isDark }: PercModalProps) 
   const ok = sum === 100
   const defaults = getDefaultPercentages(course.type)
 
-  const inp = `w-20 text-center rounded-lg border px-2 py-2 text-sm outline-none transition-colors font-semibold ${
+  const inp = `w-20 text-center rounded-xl border-2 px-2 py-3 text-base outline-none transition-all font-bold ${
     isDark
-      ? 'bg-white/5 border-white/15 text-slate-200 focus:border-yellow-500/60'
-      : 'bg-black/5 border-black/12 text-slate-800 focus:border-yellow-600/60'
+      ? 'bg-slate-800/60 border-white/15 text-slate-200 focus:border-yellow-500'
+      : 'bg-white/90 border-black/12 text-slate-800 focus:border-yellow-500'
   }`
 
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+      style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}
       onClick={onClose}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.92, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.92, y: 12 }}
-        transition={{ duration: 0.18 }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
         onClick={e => e.stopPropagation()}
-        className={`w-full max-w-md rounded-2xl shadow-2xl p-5 ${
-          isDark ? 'bg-slate-900 border border-white/12' : 'bg-white border border-black/8'
+        className={`w-full max-w-sm rounded-2xl shadow-2xl p-5 ${
+          isDark ? 'bg-slate-900 border border-white/10' : 'bg-white border border-black/8'
         }`}
       >
-        {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Pencil size={14} className="text-yellow-500" />
+              <Pencil size={14} className="text-orange-500" />
               <span className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
                 {t('editPerc')}
               </span>
             </div>
-            <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              {/* course name truncated */}
-              {course.nameFr.length > 45 ? course.nameFr.slice(0, 45) + '…' : course.nameFr}
+            <p className={`text-xs leading-relaxed max-w-[220px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              {course.nameFr.length > 40 ? course.nameFr.slice(0, 40) + '…' : course.nameFr}
             </p>
           </div>
           <button
@@ -166,10 +186,9 @@ function PercModal({ course, entry, onApply, onClose, isDark }: PercModalProps) 
           </button>
         </div>
 
-        {/* Percentage inputs */}
         <div className="flex items-end justify-center gap-4 mb-4">
-          <div className="flex flex-col items-center gap-1.5">
-            <span className={`text-[11px] uppercase tracking-wide font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wide" style={{ color: TYPE_COLORS.exam.text }}>
               {t('exam')} %
             </span>
             <input
@@ -179,8 +198,8 @@ function PercModal({ course, entry, onApply, onClose, isDark }: PercModalProps) 
             />
           </div>
           {course.type.includes('+td') && (
-            <div className="flex flex-col items-center gap-1.5">
-              <span className={`text-[11px] uppercase tracking-wide font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wide" style={{ color: TYPE_COLORS.td.text }}>
                 {t('td')} %
               </span>
               <input
@@ -191,8 +210,8 @@ function PercModal({ course, entry, onApply, onClose, isDark }: PercModalProps) 
             </div>
           )}
           {course.type.includes('+tp') && (
-            <div className="flex flex-col items-center gap-1.5">
-              <span className={`text-[11px] uppercase tracking-wide font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wide" style={{ color: TYPE_COLORS.tp.text }}>
                 {t('tp')} %
               </span>
               <input
@@ -204,40 +223,29 @@ function PercModal({ course, entry, onApply, onClose, isDark }: PercModalProps) 
           )}
         </div>
 
-        {/* Sum indicator */}
-        <div className={`flex items-center justify-center gap-2 mb-4 py-2 rounded-lg ${
+        <div className={`flex items-center justify-center gap-2 mb-4 py-2.5 rounded-xl ${
           ok
             ? isDark ? 'bg-green-500/10 border border-green-500/20' : 'bg-green-50 border border-green-200'
             : isDark ? 'bg-red-500/10 border border-red-500/20' : 'bg-red-50 border border-red-200'
         }`}>
           <span className={`text-sm font-bold ${ok ? 'text-green-400' : 'text-red-400'}`}>
-            {t('exam')} + {course.type.includes('+td') ? t('td') + ' + ' : ''}{course.type.includes('+tp') ? t('tp') + ' + ' : ''}= {sum} %
+            Total = {sum}% {ok ? '✓' : `(${t('percSum')})`}
           </span>
-          {!ok && (
-            <span className={`text-xs ${isDark ? 'text-red-400' : 'text-red-500'}`}>
-              ({t('percSum')})
-            </span>
-          )}
         </div>
 
-        {/* Actions */}
         <div className="flex gap-2">
           <button
             onClick={() => { setPE(defaults.pctExam); setPD(defaults.pctTd); setPP(defaults.pctTp) }}
-            className={`flex-1 py-2 text-sm rounded-xl border font-medium transition-colors ${
-              isDark
-                ? 'border-white/12 text-slate-400 hover:bg-white/5'
-                : 'border-black/10 text-slate-500 hover:bg-black/3'
+            className={`flex-1 py-2.5 text-sm rounded-xl border font-semibold transition-colors ${
+              isDark ? 'border-white/12 text-slate-400 hover:bg-white/5' : 'border-black/10 text-slate-500 hover:bg-black/4'
             }`}
           >
             ↺ {t('reset')}
           </button>
           <button
             onClick={onClose}
-            className={`flex-1 py-2 text-sm rounded-xl border font-medium transition-colors ${
-              isDark
-                ? 'border-white/12 text-slate-400 hover:bg-white/5'
-                : 'border-black/10 text-slate-500 hover:bg-black/3'
+            className={`flex-1 py-2.5 text-sm rounded-xl border font-semibold transition-colors ${
+              isDark ? 'border-white/12 text-slate-400 hover:bg-white/5' : 'border-black/10 text-slate-500 hover:bg-black/4'
             }`}
           >
             {t('cancel')}
@@ -245,7 +253,7 @@ function PercModal({ course, entry, onApply, onClose, isDark }: PercModalProps) 
           <button
             disabled={!ok}
             onClick={() => { onApply(pE, pD, pP); onClose() }}
-            className="flex-1 py-2 text-sm rounded-xl bg-yellow-500 hover:bg-yellow-400 text-black font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 py-2.5 text-sm rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {t('apply')}
           </button>
@@ -282,111 +290,103 @@ function CourseRow({ course, entry, onGradeChange, onOpenPerc, lang, isDark, ind
     entry.pctTp !== defaults.pctTp
   )
 
-  const rowBg = isDark
-    ? index % 2 === 0 ? 'bg-white/[0.02]' : 'bg-transparent'
-    : index % 2 === 0 ? 'bg-black/[0.02]' : 'bg-transparent'
+  const gradeColor = grade === null
+    ? isDark ? '#475569' : '#94A3B8'
+    : isValidated ? '#4ADE80' : '#F87171'
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.03 }}
-      className={`rounded-xl p-3 mb-1 ${rowBg}`}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.025, duration: 0.3, ease: 'easeOut' }}
+      className={`rounded-xl p-3 mb-2 border ${
+        isDark
+          ? index % 2 === 0 ? 'bg-white/[0.03] border-white/5' : 'bg-transparent border-transparent'
+          : index % 2 === 0 ? 'bg-black/[0.025] border-black/5' : 'bg-transparent border-transparent'
+      }`}
     >
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Course name + meta */}
-        <div className="flex-1 min-w-[140px]">
-          <p className={`text-sm font-medium leading-snug ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+      {/* Top: course name + grade result */}
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex-1 min-w-0">
+          <p className={`text-sm font-semibold leading-tight mb-1.5 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
             {getCourseName(course, lang)}
           </p>
-          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-            <span className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-              {t('coefficient')}: <span className="font-semibold text-yellow-500">{course.coefficient}</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`text-[11px] px-1.5 py-0.5 rounded-md font-semibold ${
+              isDark ? 'bg-yellow-500/10 text-yellow-400' : 'bg-yellow-50 text-yellow-600 border border-yellow-200'
+            }`}>
+              {t('coefficient')}: {course.coefficient}
             </span>
-            {/* Perc badge */}
-            {(hasTd || hasTp) && (
-              <span className={`text-[10px] font-mono ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-                {eff.pctExam}%
-                {hasTd ? `·${eff.pctTd}%` : ''}
-                {hasTp ? `·${eff.pctTp}%` : ''}
-                {hasCustomPerc && <span className="text-yellow-500 ml-0.5">*</span>}
-              </span>
-            )}
-            {/* Edit perc button */}
             {(hasTd || hasTp) && (
               <button
                 onClick={() => onOpenPerc(course.id)}
                 title={t('editPerc')}
-                className={`flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-md transition-colors ${
-                  hasCustomPerc
-                    ? 'text-yellow-500 bg-yellow-500/10 hover:bg-yellow-500/20'
-                    : isDark
-                    ? 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
-                    : 'text-slate-400 hover:text-slate-600 hover:bg-black/5'
-                }`}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 active:bg-orange-700 transition-colors min-h-[28px] min-w-[44px]"
               >
-                <Pencil size={9} /> {t('editPerc')}
+                <Pencil size={10} />
+                <span>%{hasCustomPerc ? '*' : ''}</span>
               </button>
             )}
           </div>
         </div>
 
-        {/* Grade inputs */}
-        <div className="flex items-end gap-2">
-          <GradeInput
-            value={eff.exam}
-            onChange={v => onGradeChange(course.id, 'exam', v)}
-            label={t('exam')}
-            isDark={isDark}
-          />
-          {hasTd && (
-            <GradeInput
-              value={eff.td}
-              onChange={v => onGradeChange(course.id, 'td', v)}
-              label={`${t('td')} ${eff.pctTd}%`}
-              isDark={isDark}
-            />
-          )}
-          {hasTp && (
-            <GradeInput
-              value={eff.tp}
-              onChange={v => onGradeChange(course.id, 'tp', v)}
-              label={`${t('tp')} ${eff.pctTp}%`}
-              isDark={isDark}
-            />
-          )}
-        </div>
-
-        {/* Grade + badge */}
-        <div className="flex items-center gap-2 min-w-[120px] justify-end">
+        {/* Grade display */}
+        <div className="flex flex-col items-end gap-1 flex-shrink-0">
           <motion.span
-            key={grade}
-            initial={{ scale: 0.85, opacity: 0 }}
+            key={String(grade)}
+            initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className={`text-xl font-bold ${
-              grade === null
-                ? isDark ? 'text-slate-600' : 'text-slate-400'
-                : isValidated ? 'text-green-400' : 'text-red-400'
-            }`}
+            transition={{ duration: 0.2 }}
+            className="text-2xl font-bold leading-none"
+            style={{ color: gradeColor }}
           >
             {fmtGrade(grade)}
           </motion.span>
           {grade !== null && (
             <motion.span
-              key={`badge-${isValidated}`}
+              key={`b-${isValidated}`}
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-              className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${
+              className={`text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${
                 isValidated
-                  ? 'bg-green-500/15 text-green-400 border border-green-500/30'
-                  : 'bg-red-500/15 text-red-400 border border-red-500/30'
+                  ? 'bg-green-500/15 text-green-400 border border-green-500/25'
+                  : 'bg-red-500/15 text-red-400 border border-red-500/25'
               }`}
             >
               {isValidated ? `✅ ${t('validated')}` : `❌ ${t('notValidated')}`}
             </motion.span>
           )}
         </div>
+      </div>
+
+      {/* Bottom: grade inputs */}
+      <div className="flex gap-2">
+        <GradeInput
+          value={eff.exam}
+          onChange={v => onGradeChange(course.id, 'exam', v)}
+          label={t('exam')}
+          colorType="exam"
+          isDark={isDark}
+        />
+        {hasTd && (
+          <GradeInput
+            value={eff.td}
+            onChange={v => onGradeChange(course.id, 'td', v)}
+            label={`${t('td')} ${eff.pctTd}%`}
+            colorType="td"
+            isDark={isDark}
+          />
+        )}
+        {hasTp && (
+          <GradeInput
+            value={eff.tp}
+            onChange={v => onGradeChange(course.id, 'tp', v)}
+            label={`${t('tp')} ${eff.pctTp}%`}
+            colorType="tp"
+            isDark={isDark}
+          />
+        )}
       </div>
     </motion.div>
   )
@@ -416,77 +416,58 @@ function Simulator({ semCourses, grades, lang, isDark }: SimulatorProps) {
 
   const result = selected && entry ? calcSimulator(selected, entry, simTd, simTp) : null
 
-  const card = isDark ? 'bg-slate-800/40 border-white/8' : 'bg-white/40 border-black/8'
+  const card = isDark ? 'bg-slate-800/40 border-white/8' : 'bg-white/50 border-black/8'
 
   return (
     <div className={`rounded-2xl border p-4 ${card}`}>
-      <div className="flex items-center gap-2 mb-3">
-        <Calculator size={16} className="text-yellow-500" />
+      <div className="flex items-center gap-2 mb-1">
+        <Calculator size={15} className="text-yellow-500" />
         <span className={`text-sm font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
           {t('simulatorTitle')}
         </span>
-        <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-          — {t('simulatorQuestion')}
-        </span>
       </div>
+      <p className={`text-xs mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+        {t('simulatorQuestion')}
+      </p>
 
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="flex flex-col gap-1">
-          <span className={`text-[10px] uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-            {t('course')}
-          </span>
-          <select
-            value={selectedId}
-            onChange={e => { setSelectedId(e.target.value); setSimTd(null); setSimTp(null) }}
-            className={`text-sm rounded-lg px-3 py-1.5 outline-none border transition-colors ${
-              isDark
-                ? 'bg-slate-700/60 border-white/10 text-slate-200'
-                : 'bg-white/60 border-black/10 text-slate-700'
-            }`}
-          >
-            <option value="">{t('selectCourse')}</option>
-            {complexCourses.map(c => (
-              <option key={c.id} value={c.id}>{getCourseName(c, lang)}</option>
-            ))}
-          </select>
-        </div>
+      <div className="space-y-3">
+        <select
+          value={selectedId}
+          onChange={e => { setSelectedId(e.target.value); setSimTd(null); setSimTp(null) }}
+          className={`w-full text-sm rounded-xl px-3 py-2.5 outline-none border-2 transition-all ${
+            isDark
+              ? 'bg-slate-800/60 border-white/10 text-slate-200 focus:border-yellow-500/50'
+              : 'bg-white/80 border-black/10 text-slate-700 focus:border-yellow-500/60'
+          }`}
+        >
+          <option value="">{t('selectCourse')}</option>
+          {complexCourses.map(c => (
+            <option key={c.id} value={c.id}>{getCourseName(c, lang)}</option>
+          ))}
+        </select>
 
-        {selected?.type.includes('+td') && (
-          <div className="flex flex-col items-center gap-1">
-            <span className={`text-[10px] uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-              {t('td')}
-            </span>
-            <input
-              type="number" min={0} max={20} step={0.25} placeholder="—"
-              value={simTd ?? ''}
-              onChange={e => setSimTd(parseGrade(e.target.value))}
-              className={`grade-input border ${isDark ? 'border-white/12 text-slate-100' : 'border-black/12 text-slate-800'}`}
-            />
-          </div>
-        )}
-
-        {selected?.type.includes('+tp') && (
-          <div className="flex flex-col items-center gap-1">
-            <span className={`text-[10px] uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-              {t('tp')}
-            </span>
-            <input
-              type="number" min={0} max={20} step={0.25} placeholder="—"
-              value={simTp ?? ''}
-              onChange={e => setSimTp(parseGrade(e.target.value))}
-              className={`grade-input border ${isDark ? 'border-white/12 text-slate-100' : 'border-black/12 text-slate-800'}`}
-            />
+        {selected && (selected.type.includes('+td') || selected.type.includes('+tp')) && (
+          <div className="flex gap-2">
+            {selected.type.includes('+td') && (
+              <GradeInput value={simTd} onChange={setSimTd} label={t('td')} colorType="td" isDark={isDark} />
+            )}
+            {selected.type.includes('+tp') && (
+              <GradeInput value={simTp} onChange={setSimTp} label={t('tp')} colorType="tp" isDark={isDark} />
+            )}
           </div>
         )}
 
         {result && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex items-center gap-2 ml-auto"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className={`flex items-center justify-between px-4 py-3 rounded-xl ${
+              isDark ? 'bg-white/5' : 'bg-black/4'
+            }`}
           >
-            <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              {t('neededScore')}:
+            <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              {t('neededScore')}
             </span>
             {result.status === 'ok' && (
               <span className="text-xl font-bold text-yellow-400">{fmtGrade(result.score)}</span>
@@ -528,7 +509,6 @@ export default function SemesterView({
   const passed = avg !== null && avg >= 10
   const glass = isDark ? 'glass-dark' : 'glass-light'
 
-  // Course whose perc modal is open
   const percCourse = percModalId ? semCourses.find(c => c.id === percModalId) : null
   const percDefaults = percCourse ? getDefaultPercentages(percCourse.type) : null
   const percEntry: GradeEntry = percCourse
@@ -537,14 +517,15 @@ export default function SemesterView({
 
   function handleReset() {
     if (!confirmReset) { setConfirmReset(true); return }
-    onReset(); setConfirmReset(false)
+    onReset()
+    setConfirmReset(false)
   }
 
   return (
     <>
       <div className="space-y-4 pt-4">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
               {t('semester')} {semNum}
@@ -556,7 +537,7 @@ export default function SemesterView({
           {!confirmReset ? (
             <button
               onClick={handleReset}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all min-h-[40px] ${
                 isDark
                   ? 'text-slate-400 hover:text-red-400 hover:bg-red-500/10 border border-white/8'
                   : 'text-slate-500 hover:text-red-500 hover:bg-red-500/8 border border-black/8'
@@ -569,24 +550,14 @@ export default function SemesterView({
               <span className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                 {t('resetConfirm')}
               </span>
-              <button onClick={handleReset} className="px-2 py-1 text-sm bg-red-500 hover:bg-red-600 text-white rounded-md font-semibold">✓</button>
-              <button onClick={() => setConfirmReset(false)} className={`px-2 py-1 text-sm rounded-md ${isDark ? 'hover:bg-white/8 text-slate-400' : 'hover:bg-black/5 text-slate-500'}`}>✕</button>
+              <button onClick={handleReset} className="px-3 py-1.5 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold min-h-[36px]">✓</button>
+              <button onClick={() => setConfirmReset(false)} className={`px-3 py-1.5 text-sm rounded-lg min-h-[36px] ${isDark ? 'hover:bg-white/8 text-slate-400' : 'hover:bg-black/5 text-slate-500'}`}>✕</button>
             </div>
           )}
         </div>
 
-        {/* Courses card */}
-        <div className={`rounded-2xl ${glass} p-4 card-hover`}>
-          <div className={`hidden md:flex items-center gap-3 px-3 pb-2 mb-1 border-b text-[11px] uppercase tracking-wider font-semibold ${
-            isDark ? 'border-white/8 text-slate-500' : 'border-black/8 text-slate-400'
-          }`}>
-            <span className="flex-1">{t('course')}</span>
-            <span className="w-20 text-center">{t('exam')}</span>
-            <span className="w-20 text-center">{t('td')}</span>
-            <span className="w-20 text-center">{t('tp')}</span>
-            <span className="w-24 text-right">{t('grade')} / {t('status')}</span>
-          </div>
-
+        {/* Courses */}
+        <div className={`rounded-2xl ${glass} p-3 md:p-4`}>
           {semCourses.map((course, i) => (
             <CourseRow
               key={course.id}
@@ -601,21 +572,19 @@ export default function SemesterView({
           ))}
         </div>
 
-        {/* Semester average stats */}
+        {/* Semester average */}
         <div className={`rounded-2xl ${glass} p-5 flex flex-wrap items-center justify-between gap-4`}>
           <div>
             <p className={`text-xs uppercase tracking-wide mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
               {t('average')}
             </p>
             <motion.p
-              key={avg}
+              key={String(avg)}
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className={`text-3xl font-bold ${
-                avg === null
-                  ? isDark ? 'text-slate-600' : 'text-slate-400'
-                  : passed ? 'text-green-400' : 'text-red-400'
-              }`}
+              transition={{ duration: 0.3 }}
+              className="text-4xl font-bold"
+              style={{ color: avg === null ? (isDark ? '#475569' : '#94A3B8') : passed ? '#4ADE80' : '#F87171' }}
             >
               {avg !== null ? avg.toFixed(2) : '—'}
             </motion.p>
@@ -626,7 +595,7 @@ export default function SemesterView({
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: 'spring', stiffness: 300, damping: 18 }}
-              className={`px-5 py-2.5 rounded-xl font-bold text-sm ${
+              className={`px-5 py-3 rounded-xl font-bold text-sm ${
                 passed
                   ? 'bg-green-500/15 text-green-400 border border-green-500/30 glow-green'
                   : 'bg-red-500/15 text-red-400 border border-red-500/30 glow-red'
@@ -637,11 +606,10 @@ export default function SemesterView({
           )}
         </div>
 
-        {/* Grade simulator */}
+        {/* Simulator */}
         <Simulator semCourses={semCourses} grades={grades} lang={lang} isDark={isDark} />
       </div>
 
-      {/* Percentage editor modal */}
       <AnimatePresence>
         {percModalId && percCourse && (
           <PercModal

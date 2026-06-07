@@ -103,34 +103,17 @@
   50%       { opacity: 0.6; }
 }
 
-/* ── Grade input ───────────────────────────────────────────────── */
-.grade-input {
-  width: 68px;
-  text-align: center;
-  background: transparent;
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 8px;
-  padding: 5px 6px;
-  font-size: 0.875rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  outline: none;
-}
-.grade-input:focus {
-  border-color: rgba(245, 158, 11, 0.5);
-  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.15);
-}
-.grade-input.valid   { border-color: rgba(34, 197, 94, 0.45); }
-.grade-input.invalid { border-color: rgba(239, 68, 68, 0.45); }
+/* ── No-scrollbar ──────────────────────────────────────────────── */
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
 
-.dark .grade-input { color: #f1f5f9; }
-
-/* Light mode input */
-.light-input {
-  border-color: rgba(0,0,0,0.15);
-  color: #1e293b;
+/* ── Card hover ────────────────────────────────────────────────── */
+.card-hover {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-.light-input:focus {
-  border-color: rgba(245, 158, 11, 0.6);
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(245, 158, 11, 0.18);
 }
 
 /* Tab active underline */

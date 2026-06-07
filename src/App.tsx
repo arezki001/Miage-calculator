@@ -38,8 +38,11 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState('s1')
   const [isDark, setIsDark] = useState(true)
-  const [lang, setLang] = useState<Lang>('fr')
-  useTranslation() // keep i18next context active
+  const [lang, setLang] = useState<Lang>(() => {
+    const s = localStorage.getItem('miage-lang')
+    return s === 'fr' || s === 'en' || s === 'ar' ? (s as Lang) : 'fr'
+  })
+  const { t } = useTranslation()
 
   // ── Persistence ────────────────────────────────────────────────
   useEffect(() => {
@@ -51,9 +54,11 @@ export default function App() {
   }, [semInputs])
 
   // ── i18next sync ──────────────────────────────────────────────
-  useEffect(() => {
-    i18n.changeLanguage(lang)
-  }, [lang])
+  const handleLangChange = useCallback((newLang: Lang) => {
+    i18n.changeLanguage(newLang)
+    localStorage.setItem('miage-lang', newLang)
+    setLang(newLang)
+  }, [])
 
   // ── Grade updaters ─────────────────────────────────────────────
   const updateGrade = useCallback(
@@ -132,13 +137,13 @@ export default function App() {
           activeTab={activeTab}
           onTabChange={setActiveTab}
           lang={lang}
-          onLangChange={setLang}
+          onLangChange={handleLangChange}
           isDark={isDark}
           onToggleDark={() => setIsDark(d => !d)}
           onResetAll={resetAll}
         />
 
-        <main className="pt-20 px-3 md:px-6 pb-12 max-w-6xl mx-auto">
+        <main className="pt-[108px] md:pt-20 px-3 md:px-6 pb-12 max-w-6xl mx-auto">
           <AnimatePresence mode="wait">
             {/* ── Semester view ── */}
             {activeSemNum !== null && (
@@ -201,6 +206,13 @@ export default function App() {
             )}
           </AnimatePresence>
         </main>
+
+        {/* Footer */}
+        <footer className="relative z-10 pb-8 pt-2 flex justify-center">
+          <div className={`px-6 py-3 rounded-2xl text-sm ${isDark ? 'glass-dark' : 'glass-light'} flex items-center gap-2`}>
+            <span className="text-gold-gradient font-bold">{t('devBy')}</span>
+          </div>
+        </footer>
       </div>
     </div>
   )

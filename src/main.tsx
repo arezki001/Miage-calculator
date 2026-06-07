@@ -5,8 +5,13 @@ import { initReactI18next } from 'react-i18next'
 import App from './App'
 import './index.css'
 
+const storedLang = (() => {
+  const s = localStorage.getItem('miage-lang')
+  return s === 'fr' || s === 'en' || s === 'ar' ? s : 'fr'
+})()
+
 i18n.use(initReactI18next).init({
-  lng: 'fr',
+  lng: storedLang,
   fallbackLng: 'fr',
   interpolation: { escapeValue: false },
   resources: {
@@ -65,6 +70,7 @@ i18n.use(initReactI18next).init({
         semAvgLabel: 'Moyenne',
         enterSemAvg: 'Entrez la moyenne...',
         manualNote: 'Saisissez les moyennes de vos semestres ci-dessous',
+        devBy: 'Développé par A-CH',
       },
     },
     en: {
@@ -122,6 +128,7 @@ i18n.use(initReactI18next).init({
         semAvgLabel: 'Average',
         enterSemAvg: 'Enter average...',
         manualNote: 'Enter your semester averages below',
+        devBy: 'Developed by A-CH',
       },
     },
     ar: {
@@ -179,6 +186,7 @@ i18n.use(initReactI18next).init({
         semAvgLabel: 'المعدل',
         enterSemAvg: 'أدخل المعدل...',
         manualNote: 'أدخل معدلات فصولك أدناه',
+        devBy: 'طُوِّر بواسطة A-CH',
       },
     },
   },
